@@ -12,6 +12,7 @@ import argparse
 import subprocess
 import sys
 import pathlib
+import time
 from datetime import datetime
 
 
@@ -93,21 +94,39 @@ def run_meta_analysis() -> bool:
 
 
 def run_agent(tag: str) -> None:
-    """Launch the Claude Code autoresearch agent."""
+    """Launch Claude Code and send the /loop command to start the research loop."""
     branch = f"deep-loop/{tag}"
     subprocess.run(["git", "checkout", "-B", branch], check=True)
     print(f"Branch: {branch}")
 
     init_results_tsv()
 
-    prompt = (
-        "Read program.md carefully. Follow the Setup Protocol to set up the experiment. "
-        "Then run the experiment loop described in the Experimentation section. "
-        "Follow the Meta-Analysis Protocol and Notification Protocol exactly as written. "
-        "NEVER STOP running experiments until I interrupt you."
+    print("Starting Claude Code — sending /loop command...")
+    print("(Claude Code will read CLAUDE.md + program.md, verify setup, then loop autonomously)")
+    print()
+
+    # Start Claude Code as an interactive process
+    proc = subprocess.Popen(
+        ["claude", "--dangerously-skip-permissions"],
+        stdin=subprocess.PIPE,
+        # stdout and stderr flow to terminal so you can watch
     )
-    print("Launching Claude Code research agent...")
-    subprocess.run(["claude", "--dangerously-skip-permissions", "-p", prompt])
+
+    # Wait for Claude Code to initialize before sending the command
+    time.sleep(3)
+
+    # Send the /loop slash command
+    proc.stdin.write(b"/loop\n")
+    proc.stdin.flush()
+
+    # Let it run — it will loop forever until interrupted
+    try:
+        proc.wait()
+    except KeyboardInterrupt:
+        print("\nInterrupted — Claude Code loop stopped.")
+        proc.terminate()
+        # Show final status
+        show_status()
 
 
 def main() -> None:
