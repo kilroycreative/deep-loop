@@ -16,3 +16,10 @@ notify.log
 
 # Large generated files (exclude from git — too big)
 # Note: results.tsv IS tracked (it's the experiment record)
+
+# Test artifacts
+/tmp/mock_run.log
+/tmp/mock_crash.log
+tests/__pycache__/
+.pytest_cache/
+.test-venv/

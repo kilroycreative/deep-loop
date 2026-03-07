@@ -93,40 +93,56 @@ def run_meta_analysis() -> bool:
     return result.returncode == 0
 
 
-def run_agent(tag: str) -> None:
-    """Launch Claude Code and send the /loop command to start the research loop."""
+def run_agent(tag: str, dry_run: bool = False) -> None:
+    """Launch Claude Code in a tmux session and send /loop."""
     branch = f"deep-loop/{tag}"
+    session = "deep-loop"
+
+    if dry_run:
+        print(f"[dry-run] Would: git checkout -B {branch}")
+        print(f"[dry-run] Would: init results.tsv if missing")
+        print(f"[dry-run] Would: tmux new-session -d -s {session}")
+        print(f"[dry-run] Would: tmux send-keys claude --dangerously-skip-permissions Enter")
+        print(f"[dry-run] Would: tmux send-keys /loop Enter")
+        print(f"[dry-run] Attach: tmux attach -t {session}")
+        return
+
     subprocess.run(["git", "checkout", "-B", branch], check=True)
     print(f"Branch: {branch}")
-
     init_results_tsv()
 
-    print("Starting Claude Code — sending /loop command...")
-    print("(Claude Code will read CLAUDE.md + program.md, verify setup, then loop autonomously)")
+    # Kill any existing session with this name
+    subprocess.run(["tmux", "kill-session", "-t", session], capture_output=True)
+
+    # Create new detached tmux session
+    subprocess.run([
+        "tmux", "new-session", "-d", "-s", session,
+        "-x", "220", "-y", "50"
+    ], check=True)
+    print(f"tmux session '{session}' created")
+
+    # Start Claude Code
+    subprocess.run([
+        "tmux", "send-keys", "-t", session,
+        "claude --dangerously-skip-permissions", "Enter"
+    ], check=True)
+
+    print("Waiting for Claude Code to initialize...")
+    time.sleep(4)
+
+    # Send /loop
+    subprocess.run([
+        "tmux", "send-keys", "-t", session,
+        "/loop", "Enter"
+    ], check=True)
+
     print()
-
-    # Start Claude Code as an interactive process
-    proc = subprocess.Popen(
-        ["claude", "--dangerously-skip-permissions"],
-        stdin=subprocess.PIPE,
-        # stdout and stderr flow to terminal so you can watch
-    )
-
-    # Wait for Claude Code to initialize before sending the command
-    time.sleep(3)
-
-    # Send the /loop slash command
-    proc.stdin.write(b"/loop\n")
-    proc.stdin.flush()
-
-    # Let it run — it will loop forever until interrupted
-    try:
-        proc.wait()
-    except KeyboardInterrupt:
-        print("\nInterrupted — Claude Code loop stopped.")
-        proc.terminate()
-        # Show final status
-        show_status()
+    print(f"✓ Claude Code is running /loop in tmux session '{session}'")
+    print(f"  Attach:   tmux attach -t {session}")
+    print(f"  Detach:   Ctrl+B then D (while attached)")
+    print(f"  Status:   python orchestrate.py --status")
+    print(f"  Meta:     python orchestrate.py --meta-only")
+    print(f"  Stop:     tmux kill-session -t {session}")
 
 
 def main() -> None:
@@ -152,6 +168,11 @@ def main() -> None:
         action="store_true",
         help="Show experiment progress and exit"
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would happen without actually running"
+    )
     args = parser.parse_args()
 
     if args.status:
@@ -162,7 +183,7 @@ def main() -> None:
         run_meta_analysis()
         return
 
-    run_agent(args.tag)
+    run_agent(args.tag, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
