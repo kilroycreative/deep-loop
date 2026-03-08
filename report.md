@@ -1168,12 +1168,26 @@ No protocol-level standard. A centralized revocation service that works across a
 - Least-privilege enforcement at tool execution layer
 - Anomaly detection on credential usage patterns
 
+### New Opportunities (from Research)
+
+Based on the latest findings:
+
+**5. DCR Security Hardening**
+Multiple 1-click account takeover vulnerabilities discovered in production MCP servers (Square, etc). A DCR-hardening layer or CIMD adoption toolkit would address urgent market need.
+
+**6. UEBA for Agent Credentials**
+Only 21% of orgs maintain real-time agent registries. Behavioral analytics specifically for agent credential patterns (vs. general UEBA) is a whitespace opportunity. Market: $6.26B → $15.22B by 2030 (19.45% CAGR).
+
+**7. Compliance Accelerator**
+CSA survey: only 18% "highly confident" IAM can manage agents. A turnkey solution mapping to NIST CSF 2.0, ISO 42001, OWASP AI, MITRE ATLAS with automated RFP response generation.
+
 ### Risks
 
 1. **Standards convergence:** If NIST or IETF standardizes quickly, early implementations may need rework
 2. **Platform play:** Microsoft (Entra Agent ID) and AWS (AgentCore Identity) have resources to dominate enterprise
 3. **MCP evolution:** If MCP adds downstream auth natively, the opportunity shrinks
 4. **Security incidents:** Any major breach involving agent credentials will reshape the market overnight
+5. **LLM provider restrictions:** Anthropic's OAuth ban shows providers can change access rules overnight — business models dependent on provider APIs face policy risk
 
 ### Recommended Next Steps
 
