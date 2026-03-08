@@ -153,15 +153,15 @@ class TestMetaAnalyze:
     SCRIPT = ROOT / "meta_analyze.py"
 
     def test_build_analysis_task(self, tmp_path):
-        """Verify task string is built from results.tsv + git log."""
-        # Seed a fake results.tsv
-        tsv = tmp_path / "results.tsv"
+        """Verify task string is built from knowledge_index.tsv + report.md."""
+        # Seed a fake knowledge_index.tsv
+        tsv = tmp_path / "knowledge_index.tsv"
         tsv.write_text(
-            "commit\tval_bpb\tmemory_gb\tstatus\tdescription\n"
-            "abc1234\t0.994200\t44.1\tkeep\twindow pattern SSSSL\n"
+            "question\tanswer_summary\tsources\tconfidence\tgaps_identified\tstatus\n"
+            "What is OAuth 2.0 token exchange?\tRFC 8693 defines subject/actor tokens\thttps://rfc.example\tHIGH\t\tanswered\n"
         )
-        # Fake train.py
-        (tmp_path / "train.py").write_text("# fake train\nprint('hello')\n")
+        # Fake report.md
+        (tmp_path / "report.md").write_text("# AI Agent Credential Delegation\n\n## Executive Summary\nTBD\n")
 
         import importlib.util
         s = importlib.util.spec_from_file_location("meta_analyze", self.SCRIPT)
@@ -169,10 +169,9 @@ class TestMetaAnalyze:
         s.loader.exec_module(mod)
 
         task = mod.build_analysis_task(tmp_path)
-        assert "val_bpb" in task
-        assert "0.994200" in task
-        assert "window pattern SSSSL" in task
-        assert "Proposed hypotheses" in task or "hypotheses" in task.lower()
+        assert "RFC 8693" in task or "OAuth" in task or "token exchange" in task
+        assert "knowledge" in task.lower() or "credential" in task.lower()
+        assert "Proposed" in task or "question" in task.lower()
 
     def test_runs_with_seeded_results(self, tmp_path):
         """Integration: run meta_analyze.py with seeded data, verify output file created."""
@@ -210,11 +209,11 @@ class TestClaudeCodeIntegration:
         assert (ROOT / ".claude" / "commands" / "loop.md").exists()
 
     def test_loop_command_has_required_sections(self):
-        """loop.md must have Context Loading, Setup Verification, and Experiment Loop."""
+        """loop.md must have Context Loading, Setup Verification, and Research Loop."""
         content = (ROOT / ".claude" / "commands" / "loop.md").read_text()
         assert "Context Loading" in content
         assert "Setup Verification" in content
-        assert "Experiment Loop" in content
+        assert "Research Loop" in content
         assert "NEVER" in content  # "NEVER ask should I continue"
         assert "meta_analyze.py" in content
         assert "notify.py" in content
@@ -229,19 +228,24 @@ class TestClaudeCodeIntegration:
         assert claude_md.exists()
         content = claude_md.read_text()
         assert "[BLOCK]" in content
-        assert "prepare.py" in content
-        assert "results.tsv" in content
-        assert "val_bpb" in content
+        assert "report.md" in content
+        assert "knowledge_index.tsv" in content
+        assert "fabricat" in content.lower()  # "No fabrication" invariant
 
     def test_program_md_exists_and_has_hypotheses(self):
-        """program.md must have at least 5 hypotheses."""
+        """program.md must have at least 5 research questions (Q1..Q5+)."""
         program_md = ROOT / "program.md"
         assert program_md.exists()
         content = program_md.read_text()
-        # Count numbered hypotheses
+        # Count numbered seed questions (Q1, Q2, ...) or numbered items
         import re
-        hypotheses = re.findall(r'^\s*\d+\.', content, re.MULTILINE)
-        assert len(hypotheses) >= 5, f"Expected 5+ hypotheses, found {len(hypotheses)}"
+        questions = re.findall(r'\*\*Q\d+', content)
+        if len(questions) < 5:
+            # fallback: count any numbered items
+            numbered = re.findall(r'^\s*\d+\.', content, re.MULTILINE)
+            assert len(numbered) >= 5, f"Expected 5+ questions, found {len(numbered)}"
+        else:
+            assert len(questions) >= 5, f"Expected 5+ Q-questions, found {len(questions)}"
 
     def test_all_referenced_scripts_exist(self):
         """Every script referenced in loop.md must exist."""

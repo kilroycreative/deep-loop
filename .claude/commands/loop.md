@@ -1,83 +1,71 @@
 # /loop — Autonomous Research Loop
 
-Load all context, verify setup, and run the deep-loop experiment loop autonomously.
+Load all context, verify setup, and run the deep-loop domain research loop autonomously.
 
 ## Context Loading
 
-Run these commands to load state before starting any experiments:
+Run these commands before starting:
 
 ```bash
-# 1. Read the research constitution (invariants and rules)
+# 1. Read the research constitution
 cat CLAUDE.md
 
-# 2. Read the research direction (hypothesis queue)
+# 2. Read the research program (seed questions + topic)
 cat program.md
 
-# 3. Check current branch and experiment count
+# 3. Check current branch
 git branch --show-current
-git log --oneline -5
 
-# 4. Read current results
-cat results.tsv 2>/dev/null || echo "(no results yet — will initialize)"
+# 4. Load existing research state
+cat knowledge_index.tsv 2>/dev/null || echo "(no entries yet)"
+cat report.md 2>/dev/null || echo "(no report yet)"
 
-# 5. Check if next-hypotheses.md exists from prior meta-analysis
-cat next-hypotheses.md 2>/dev/null || echo "(no meta-analysis yet)"
-
-# 6. Read current train.py architecture summary (first 80 lines = config + key classes)
-head -80 train.py
-
-# 7. Verify training data exists
-ls ~/.cache/autoresearch/data/*.parquet 2>/dev/null | wc -l
+# 5. Check for meta-analysis output
+cat next-questions.md 2>/dev/null || echo "(no meta-analysis yet)"
 ```
 
 ## Setup Verification
 
 Before starting the loop, verify:
 
-- [ ] Branch is `deep-loop/<tag>` (not master/main). If not: propose a tag and create the branch.
-- [ ] results.tsv exists with baseline row (val_bpb=0.997900). If not: create it.
-- [ ] Training data exists (at least 1 .parquet file in ~/.cache/autoresearch/). If not: run `uv run prepare.py --num-shards 5` and wait.
-- [ ] `uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.device_count())"` returns `True`. If not: CUDA not available, alert and stop.
+- [ ] Branch is `research/<tag>`. If not: propose a tag and create the branch.
+- [ ] `knowledge_index.tsv` exists with header row. If not: create it:
+  ```
+  question	answer_summary	sources	confidence	gaps_identified	status
+  ```
+- [ ] `report.md` exists with section headers from program.md. If not: create it with empty sections.
 
 ## Gap Analysis (run once at session start)
 
-Before the first experiment, do a quick gap analysis between program.md hypotheses and results.tsv:
+Before the first question:
+1. Which seed questions from program.md have NOT been answered yet in knowledge_index.tsv?
+2. Does next-questions.md suggest anything not in program.md?
+3. State your starting question clearly: "I will research [X] because [reason]."
 
-1. Which hypotheses from program.md have NOT been tried yet?
-2. Which prior attempts (if any) came close to improvement but missed?
-3. Does next-hypotheses.md (from meta-analysis) suggest anything not in program.md?
-
-State your starting hypothesis clearly: "I will try [X] because [reason]. Expected: val_bpb [improves/degrades/uncertain] because [reasoning]."
-
-## Experiment Loop
+## Research Loop
 
 LOOP FOREVER (until interrupted):
 
-1. **Propose** — State the next hypothesis clearly in one sentence. Reference CLAUDE.md invariants.
-2. **Verify syntax before commit** — `python -c "import ast; ast.parse(open('train.py').read())"`
-3. **Commit** — `git add train.py && git commit -m "[hypothesis description]"`
-4. **Run** — `uv run train.py > run.log 2>&1`
-   - If run takes >10 minutes: kill it (`kill %1`), treat as crash, revert.
-5. **Extract results:**
-   ```bash
-   grep "^val_bpb:\|^peak_vram_mb:\|^training_seconds:\|^total_seconds:" run.log
-   ```
-6. **Evaluate:**
-   - If grep returns nothing → CRASH: record crash row in TSV, `git reset --hard HEAD~1`
-   - If val_bpb improved → KEEP: record keep row in TSV
-   - If val_bpb same or worse → DISCARD: `git reset --hard HEAD~1`, record discard row in TSV
-7. **Check thresholds:**
-   - If val_bpb < 0.990: `python notify.py --event breakthrough --val <val>`
-   - If val_bpb < 0.985: `python notify.py --event major_breakthrough --val <val>`
-8. **Check meta-analysis trigger:**
-   - Count: `tail -n +2 results.tsv | grep -v "^baseline" | wc -l`
-   - If count is a multiple of 12: `python meta_analyze.py --workspace . --write-hypotheses next-hypotheses.md`
-   - Then read next-hypotheses.md and incorporate into next proposal
+1. **Pick a question** — from seed queue, gaps_identified column, or next-questions.md (weight 2x). State it clearly.
+2. **Search** — run web searches for the question. Read at least 2-3 sources before writing.
+   - Search strategies: direct query, look for specs/RFCs/GitHub repos, find competing products, find academic papers
+   - For standards: look for official spec pages, IETF drafts, OpenID specs
+   - For market players: search Product Hunt, GitHub, HN, recent news
+3. **Synthesize** — identify what's known, what's contested, what's unknown. Flag confidence level.
+4. **Write to report.md** — find the right section and append/update. All claims cited. Uncertain things flagged.
+5. **Record in knowledge_index.tsv** — append one row. If answer is partial, mark status=partial and list gaps.
+6. **Check breakthrough** — if this finding significantly changes the picture (e.g., found a dominant standard, found a competitor doing exactly what Cred does, found an unsolved problem Cred solves): `python notify.py --event breakthrough --val "insight: <one-line description>"`
+7. **Check meta-analysis trigger** — count answered rows in knowledge_index.tsv. If count is a multiple of 5: `python meta_analyze.py --workspace . --write-hypotheses next-questions.md` then read next-questions.md.
 
 REPEAT from step 1.
 
 ## Stopping Criteria
 
-There are none. Run until interrupted by the user. If you run out of ideas from program.md and next-hypotheses.md, think harder — revisit discarded experiments for combinations, try more radical architectural changes, re-read train.py for untapped levers.
+There are none. Run until interrupted by the user.
 
 **NEVER ask "should I continue?" — the answer is always yes.**
+
+If you run out of seed questions, generate new ones from:
+- gaps_identified entries in knowledge_index.tsv
+- Adjacent topics that emerged during research
+- Specific players or standards worth deeper investigation

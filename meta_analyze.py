@@ -17,66 +17,51 @@ from datetime import datetime
 
 
 def build_analysis_task(workspace: pathlib.Path) -> str:
-    """Build the investigation task string from available experiment data."""
-    results_tsv = workspace / "results.tsv"
-    train_py = workspace / "train.py"
+    """Build the gap analysis task string from knowledge index and report."""
+    knowledge_tsv = workspace / "knowledge_index.tsv"
+    report_md = workspace / "report.md"
 
-    # Read results
-    results_content = results_tsv.read_text() if results_tsv.exists() else "(no results yet)"
+    # Read knowledge index
+    knowledge_content = knowledge_tsv.read_text() if knowledge_tsv.exists() else "(no entries yet)"
 
-    # Read git log
-    try:
-        git_log = subprocess.check_output(
-            ["git", "log", "--oneline", "-20"],
-            cwd=workspace,
-            text=True,
-            stderr=subprocess.DEVNULL
-        )
-    except Exception:
-        git_log = "(git log unavailable)"
-
-    # Read last 60 lines of train.py (agent's most recent changes)
-    if train_py.exists():
-        lines = train_py.read_text().splitlines()
-        train_snippet = "\n".join(lines[-60:])
+    # Read report (first 100 lines for context)
+    if report_md.exists():
+        lines = report_md.read_text().splitlines()
+        report_snippet = "\n".join(lines[:100])
     else:
-        train_snippet = "(train.py not found)"
+        report_snippet = "(no report yet)"
 
-    return f"""You are a research analyst for an autonomous ML training experiment system.
+    return f"""You are a research strategist for an autonomous domain research system.
 
 ## Context
-The autoresearch system modifies a 50M parameter GPT model (train.py) and trains for exactly 5 minutes.
-The metric is val_bpb (validation bits per byte) — LOWER IS BETTER. Baseline: 0.997900.
-The model uses: RoPE, RMS Norm, GQA attention, Muon+AdamW optimizer, Flash Attention 3, Value Embeddings.
+The research topic is: **AI agent credential delegation** — how AI agents request, receive, use, and manage credentials (OAuth tokens, API keys, etc.) on behalf of users.
 
-## Experiment Results (results.tsv)
-{results_content}
+The goal is comprehensive, verified, cited coverage of this domain. The agent has been running a research loop and recording findings.
 
-## Git Log (recent commits)
-{git_log}
+## Current Knowledge Index (knowledge_index.tsv)
+{knowledge_content}
 
-## Current train.py (last 60 lines — most recent agent changes)
-```python
-{train_snippet}
-```
+## Report Progress (first 100 lines of report.md)
+{report_snippet}
 
 ## Your Task
-Analyze the experiment history and produce a meta-analysis report. Specifically:
+Analyze the research progress and identify the highest-value next questions to investigate. Specifically:
 
-1. **What worked**: Identify which experiments improved val_bpb vs baseline (0.997900). What did they have in common architecturally?
+1. **Coverage gaps**: Which major sub-topics of agent credential delegation have NOT been covered or are only partially covered?
 
-2. **What failed and why**: Identify patterns in discarded experiments. Are there systematic failure modes?
+2. **Weak entries**: Which answered questions have LOW confidence or marked as partial/conflicting? What would strengthen them?
 
-3. **Untried combinations**: Were there two individually-weak changes that might compound positively?
+3. **Emerging threads**: What topics appear in gaps_identified entries that haven't been followed up on?
 
-4. **Proposed hypotheses** (EXACTLY 5): For each, specify:
-   - The exact Python/config change to make in train.py
-   - Expected val_bpb direction (improve/degrade/uncertain)
-   - Confidence (high/medium/low) and reasoning
+4. **Proposed questions** (EXACTLY 5): For each, specify:
+   - The exact research question to answer
+   - Why it matters for understanding agent credential delegation
+   - What to search for (suggested search queries or sources)
+   - Priority: HIGH | MEDIUM | LOW
 
-5. **Priority order**: Which hypothesis should be tried first and why?
+5. **Priority order**: Which question should be investigated first and why?
 
-Format your output as structured markdown with clear headers. Be specific about exact parameter values and code changes.
+Format your output as structured markdown with clear headers. Be specific and actionable.
 """
 
 
@@ -151,8 +136,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--write-hypotheses",
-        default="next-hypotheses.md",
-        help="Output file for proposed hypotheses"
+        default="next-questions.md",
+        help="Output file for proposed next research questions"
     )
     args = parser.parse_args()
 
@@ -174,7 +159,7 @@ def main() -> None:
 
     # Write output
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    content = f"# Meta-Analysis — {ts}\n\n{result}\n"
+    content = f"# Research Gap Analysis — {ts}\n\n{result}\n"
     output_path.write_text(content)
 
     print(f"[meta_analyze] Written to {output_path}")
