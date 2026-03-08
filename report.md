@@ -900,12 +900,31 @@ LangGraph Platform provides custom authentication and resource-level access cont
 
 ### AWS Bedrock AgentCore Identity
 
-Purpose-built identity service for AI agents ([AWS Docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity.html)):
-- Native OAuth 2.0 client credentials (M2M) and authorization code (user-delegated) flows
-- **Delegation, not impersonation**: Agents authenticate as themselves while carrying verifiable user context
-- Secure token vault with automatic refresh
-- Fine-grained access control with comprehensive audit trails
-- Revocable agent access independent of user access
+Purpose-built identity service for AI agents ([AWS Docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity.html), [AWS Blog](https://dev.to/aws-heroes/amazon-bedrock-agentcore-identity-part-1-introduction-and-overview-di1)):
+
+**Architecture:**
+- **Inbound Auth**: Authenticates callers accessing agents/tools/gateways (IAM or JWT)
+- **Outbound Auth**: Enables agents to access downstream resources via API keys or OAuth
+
+**Token Vault:**
+- Stores: OAuth tokens, client credentials, API keys with KMS encryption
+- Strict access controls requiring workload identity proof
+- Independent validation per request (Zero Trust)
+
+**OAuth 2.0 Support:**
+- **2LO (Client Credentials)**: Machine-to-machine authentication
+- **3LO (Authorization Code)**: User-delegated access with explicit consent
+- Built-in providers: Google, GitHub, Slack, Salesforce, Atlassian (Jira)
+
+**Developer Experience:**
+- SDK annotations: `@requires_access_token`, `@requires_api_key`
+- Automatic error handling for token expiration, consent requirements
+- Eliminates embedded secrets in agent code
+
+**Identity Model:**
+- Unique ARN per agent: `arn:aws:bedrock-agentcore:region:account:workload-identity/...`
+- Service-Linked Role (since Oct 2025) for workload identity permissions
+- Comprehensive audit trails for compliance reporting
 
 ### Third-Party Solutions
 
