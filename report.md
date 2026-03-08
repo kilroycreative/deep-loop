@@ -174,6 +174,8 @@ $53M Series A (Feb 2023). Announced industry-first platform for AI agent authent
 - **Outbound Apps**: 50+ pre-built integrations (Gmail, HubSpot, GitHub, Slack, Notion, Shopify)
 - **MCP Auth SDKs**: Secure remote MCP servers with OAuth-based authorization
 
+**Pricing:** Free (7,500 MAU), Pro ($0.05-0.10/user/mo), Growth ($799/mo ~25k MAU), Enterprise custom
+
 **Scalekit**
 Auth stack for AI apps ([Scalekit](https://www.scalekit.com)):
 - Drop-in OAuth 2.1 for MCP developers
@@ -185,6 +187,9 @@ IAM for agentic AI and workloads ([Aembit](https://aembit.io/)):
 - Secretless access through infrastructure-asserted identity
 - Real-time policy enforcement
 - Independent identity broker across clouds, SaaS, and on-premise
+- Secretless access cuts 85% of credential issuance/rotation/auditing work
+
+**Pricing:** Starter free, Enterprise custom ($25M Series A, Sep 2024)
 
 ### API Integration Platforms
 
@@ -193,7 +198,9 @@ Powers integrations for "hundreds of fast growing AI agent companies" ([Nango](h
 - 700+ APIs across 30 categories
 - Automatic credential refresh with webhook notifications
 - Fully white-label authentication flows
-- Community-driven API additions
+- Community-driven API additions (~12 APIs added monthly)
+
+**Pricing:** Open source, self-hostable, no vendor lock-in
 
 **Arcade.dev**
 Built explicitly for LLM agents and multi-agent systems:
@@ -1164,6 +1171,9 @@ No protocol-level standard. A centralized revocation service that works across a
 - [OpenAI — GPT Actions Authentication](https://developers.openai.com/api/docs/actions/authentication/)
 - [Dave Swift — Claude OAuth Update](https://daveswift.com/claude-oauth-update/)
 - [Claude MCP Connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
+- [WorkOS — Descope vs WorkOS for Agentic Identity](https://workos.com/blog/descope-vs-workos-agentic-identity-enterprise-authentication)
+- [Nango — Best AI Agent Authentication Platforms](https://nango.dev/blog/best-ai-agent-authentication)
+- [Aembit Pricing](https://aembit.io/pricing/)
 
 **Standards Bodies:**
 - [NIST AI Agent Standards Initiative](https://www.nist.gov/caisi/ai-agent-standards-initiative)
