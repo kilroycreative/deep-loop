@@ -812,6 +812,48 @@ Logs must be **append-only, immutable**, retained per policy. WORM storage recom
 
 Separation of intent from execution is critical — the agent's reasoning doesn't matter for compliance; the audit trail of what was authorized vs. what executed does.
 
+### What Enterprise RFPs Actually Ask For
+
+**CSA Survey (Feb 2026)** on securing autonomous AI agents ([CSA](https://cloudsecurityalliance.org/artifacts/securing-autonomous-ai-agents)):
+
+| Metric | Value |
+|--------|-------|
+| Orgs with agents in production | 40% |
+| "High confidence" IAM can manage agents | Only 18% |
+| Maintain real-time agent registries | Only 21% |
+| Increasing identity/security budgets for agents | 40% |
+
+**CISO 8-Point Agent Security Checklist** ([dig8ital](https://dig8ital.com/articles/ciso-ai-agent-security-checklist/)):
+
+1. Full inventory of every AI agent in production
+2. Every MCP server connection mapped and documented
+3. **No shared API keys between agents and human users**
+4. Agent memory stores audited for poisoning indicators
+5. Data access AND exfiltration paths documented per agent
+6. Human override procedures exist and have been tested
+7. Agent-to-agent communication chains logged (with correlation IDs)
+8. AI agent infrastructure red-teamed at least once
+
+**RFP Evaluation Pillars** ([The Hacker News](https://thehackernews.com/2026/03/new-rfp-template-for-ai-usage-control.html)):
+- AI Discovery & Coverage
+- Contextual Awareness (who initiates, why)
+- Policy Governance (block sensitive, permit benign)
+- **Real-Time Enforcement** (before data submission)
+- Auditability (board-ready reporting)
+- Vendor Futureproofing (autonomous agent readiness)
+
+**Federal Requirements (OMB M-26-04):**
+- Model cards and evaluation artifacts required
+- Acceptable use policies
+- Impact assessments covering: prompts, tool inventory, tool permissions, retrieval, memory, logging
+
+**Framework Mappings:**
+- NIST CSF 2.0 — ID.AM (Asset Management)
+- ISO 27001:2022 — A.5.9
+- ISO 42001:2023 (AI Management Systems)
+- OWASP AI Security
+- MITRE ATLAS
+
 ### Where Buyers Expect This to Live
 
 Market fragmentation — no consensus on where agent credential systems should reside:
@@ -1183,6 +1225,9 @@ No protocol-level standard. A centralized revocation service that works across a
 - [Aembit Pricing](https://aembit.io/pricing/)
 - [Google Gemini OAuth Quickstart](https://ai.google.dev/gemini-api/docs/oauth)
 - [Gemini Enterprise Credential Delegation](https://jpassing.com/2026/01/27/letting-users-delegate-access-from-gemini-enterprise-to-agent-engine/)
+- [CSA — Securing Autonomous AI Agents Survey](https://cloudsecurityalliance.org/artifacts/securing-autonomous-ai-agents)
+- [CISO AI Agent Security Checklist](https://dig8ital.com/articles/ciso-ai-agent-security-checklist/)
+- [RFP Template for AI Usage Control](https://thehackernews.com/2026/03/new-rfp-template-for-ai-usage-control.html)
 
 **Standards Bodies:**
 - [NIST AI Agent Standards Initiative](https://www.nist.gov/caisi/ai-agent-standards-initiative)
