@@ -907,6 +907,13 @@ Major LLM providers have divergent approaches to tool authentication:
 
 > "A Claude Max subscription at $200/month was never designed to handle an autonomous agent running LLM calls all day — in API terms, that kind of workload can easily cost thousands of dollars."
 
+**Google Gemini** ([Google AI](https://ai.google.dev/gemini-api/docs/oauth), [Credential Delegation](https://jpassing.com/2026/01/27/letting-users-delegate-access-from-gemini-enterprise-to-agent-engine/)):
+- Supports API keys and OAuth for Gemini API
+- **Gemini Enterprise credential delegation**: user consents once, access token forwarded in `tool_context.session.state`
+- Auth handled per-agent (all-or-nothing), unlike ADK's per-tool decorators
+- User delegation ensures audit logs contain actual user principal (not just agent)
+- Limitation: all OAuth scopes declared upfront, workforce identity federation limited
+
 **Implications:**
 - No standardized delegation across providers
 - Each has proprietary authentication approach
@@ -1174,6 +1181,8 @@ No protocol-level standard. A centralized revocation service that works across a
 - [WorkOS — Descope vs WorkOS for Agentic Identity](https://workos.com/blog/descope-vs-workos-agentic-identity-enterprise-authentication)
 - [Nango — Best AI Agent Authentication Platforms](https://nango.dev/blog/best-ai-agent-authentication)
 - [Aembit Pricing](https://aembit.io/pricing/)
+- [Google Gemini OAuth Quickstart](https://ai.google.dev/gemini-api/docs/oauth)
+- [Gemini Enterprise Credential Delegation](https://jpassing.com/2026/01/27/letting-users-delegate-access-from-gemini-enterprise-to-agent-engine/)
 
 **Standards Bodies:**
 - [NIST AI Agent Standards Initiative](https://www.nist.gov/caisi/ai-agent-standards-initiative)
