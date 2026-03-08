@@ -590,6 +590,40 @@ Four critical attack categories identified for MCP and agent-to-agent (A2A) comm
 - Tools designed to extract access tokens through seemingly innocent parameters
 - OAuth tokens stored by MCP servers become high-value targets — compromising one MCP server grants access to user's entire digital ecosystem
 
+#### 6. Dynamic Client Registration (DCR) Vulnerabilities
+
+Multiple 1-click account takeover vulnerabilities discovered in MCP servers during 2025 ([Descope](https://www.descope.com/blog/post/dcr-hardening-mcp), [Obsidian Security](https://www.obsidiansecurity.com/blog/when-mcp-meets-oauth-common-pitfalls-leading-to-one-click-account-takeover)).
+
+**Core Problem:** MCP servers act as both authorization servers (for MCP clients) AND OAuth clients (to SaaS platforms) using a single static `client_id`. This creates misaligned security boundaries.
+
+**Attack Patterns:**
+
+| Attack | Mechanism | Result |
+|--------|-----------|--------|
+| **Shared client_id exploitation** | SaaS AS caches consent for shared ID | Attacker gets victim's authorization |
+| **Attacker-initiated consent bypass** | Attacker completes consent, captures redirect URL, sends to victim | Victim clicks, attacker gets code |
+| **Subdomain cookie injection** | Compromise subdomain, inject cookie | Defeats CSRF protections |
+
+**Real-World Case — Square MCP:**
+
+Square's `mcp.squareup.com` allowed registration without `redirect_uri` restrictions:
+1. Attacker registers malicious MCP client
+2. Completes consent, captures redirect to `connect.squareup.com`
+3. Sends URL to victim who clicks
+4. Attacker exchanges code for tokens — **full merchant data access**
+
+> "Any user who had previously authorized the Square MCP server was vulnerable. A single click on a malicious link granted an attacker full access."
+
+**Mitigations:**
+- Strict `redirect_uri` allowlisting during DCR
+- State-session binding with `__Host-` prefix cookies
+- Display client identity and redirect URI on consent screens
+- Rate limiting and IP reputation services
+
+**Emerging Alternative — CIMD (SEP-991):**
+
+Client ID Metadata Documents propose domain-based trust — `client_id` becomes an HTTPS URL pointing to metadata, eliminating DCR endpoints as attack vectors. Adoption remains below 4%.
+
 ### Mitigations
 
 **Authentication Controls:**
@@ -847,6 +881,31 @@ From [WorkOS](https://workos.com/blog/securing-ai-agents), [1Password](https://1
 4. **Centralized management**: Unified secrets store, audit every request/rotation
 5. **LLM isolation**: Tokens retrieved at tool execution, never passed to model
 
+### LLM Provider Tool-Use Authentication
+
+Major LLM providers have divergent approaches to tool authentication:
+
+**OpenAI GPT Actions** ([OpenAI Docs](https://developers.openai.com/api/docs/actions/authentication/)):
+- Three options: None, API Key (encrypted storage), OAuth
+- OAuth is "most robust" — user token passed in Authorization header
+- `x-openai-isConsequential` flag triggers mandatory user confirmation
+- Callback URL: `https://chat.openai.com/aip/{GPT_ID}/oauth/callback`
+- Allows third-party OAuth tokens with self-managed compliance
+
+**Anthropic Claude** (Feb 2026 policy change):
+- OAuth restricted to Claude Code and Claude.ai only
+- Third-party tools must use API keys via Claude Console
+- Crackdown driven by abuse: autonomous agents running expensive loops on $200/mo subscriptions
+- MCP connector available for Claude API
+
+> "A Claude Max subscription at $200/month was never designed to handle an autonomous agent running LLM calls all day — in API terms, that kind of workload can easily cost thousands of dollars."
+
+**Implications:**
+- No standardized delegation across providers
+- Each has proprietary authentication approach
+- Cost control driving policy decisions
+- Developers must handle provider-specific integration
+
 ### The Developer Experience Gap
 
 For a developer building an agent that needs OAuth today:
@@ -1099,6 +1158,12 @@ No protocol-level standard. A centralized revocation service that works across a
 - [Okta — AI Agent Token Exchange](https://developer.okta.com/docs/guides/ai-agent-token-exchange/authserver/main/)
 - [Okta — Cross-App Access for Enterprise AI](https://developer.okta.com/blog/2025/06/23/enterprise-ai)
 - [Keycloak — Token Exchange](https://www.keycloak.org/securing-apps/token-exchange)
+- [Descope — DCR Hardening for MCP](https://www.descope.com/blog/post/dcr-hardening-mcp)
+- [Obsidian — MCP OAuth Pitfalls: 1-Click Account Takeover](https://www.obsidiansecurity.com/blog/when-mcp-meets-oauth-common-pitfalls-leading-to-one-click-account-takeover)
+- [WorkOS — DCR in MCP](https://workos.com/blog/dynamic-client-registration-dcr-mcp-oauth)
+- [OpenAI — GPT Actions Authentication](https://developers.openai.com/api/docs/actions/authentication/)
+- [Dave Swift — Claude OAuth Update](https://daveswift.com/claude-oauth-update/)
+- [Claude MCP Connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
 
 **Standards Bodies:**
 - [NIST AI Agent Standards Initiative](https://www.nist.gov/caisi/ai-agent-standards-initiative)
