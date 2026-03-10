@@ -79,17 +79,17 @@ def show_status() -> None:
         print(f"  kept={kept} discarded={discarded} crashed={crashed}")
 
 
-def run_meta_analysis() -> bool:
-    """Run OpenPlanter meta-analysis."""
-    print("Running OpenPlanter meta-analysis...")
-    result = subprocess.run(
-        [
-            sys.executable, "meta_analyze.py",
-            "--workspace", ".",
-            "--write-hypotheses", "next-hypotheses.md"
-        ],
-        timeout=300
-    )
+def run_meta_analysis(dry_run: bool = False) -> bool:
+    """Run second-order meta-analysis. Rewrites program.md + process_log.md."""
+    print("Running meta-analysis v2 (second-order process evolution)...")
+    cmd = [
+        sys.executable, "meta_analyze.py",
+        "--workspace", ".",
+        "--cohort-size", "5",
+    ]
+    if dry_run:
+        cmd.append("--dry-run")
+    result = subprocess.run(cmd, timeout=300)
     return result.returncode == 0
 
 
