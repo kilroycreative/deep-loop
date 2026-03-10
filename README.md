@@ -1,163 +1,152 @@
 # deep-loop
 
-**Autonomous ML research with a meta-analysis tier**
+**Autonomous research with self-evolving methodology**
 
-One-liner: autoresearch runs experiments. OpenPlanter steps back every hour to find what's working and generate smarter hypotheses. Two agents, one loop.
+An AI agent researches a domain. A meta-agent watches the research, measures what's working, rewrites the research strategy, and commits it. The git log of `program.md` becomes the genealogy of how the methodology evolved.
 
-## What It Does
+Two tiers, one feedback loop. The system gets smarter over time — not because the model improves, but because the process does.
 
-deep-loop combines two autonomous systems:
-
-1. **autoresearch (inner loop)**: A Claude Code agent that modifies `train.py`, runs 5-minute training jobs on H100, logs results, and iterates. It never stops until you interrupt it.
-
-2. **OpenPlanter (meta-analysis)**: Every 12 experiments (or after a significant improvement), a second agent analyzes all results to identify patterns and propose smarter hypotheses.
-
-The result: an experiment loop that gets smarter over time.
-
-## Architecture
+## How It Works
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         orchestrate.py                          │
-│                    (launches and monitors)                      │
-└─────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Claude Code Agent                           │
-│                                                                 │
-│   reads: program.md (research direction)                        │
-│   edits: train.py (model architecture, hyperparams)             │
-│   runs:  uv run train.py (5-min training on H100)               │
-│   logs:  results.tsv (experiment record)                        │
-│                                                                 │
-│   Every 12 experiments OR after >0.003 val_bpb improvement:     │
-│   ───────────────────────────────────────────────────────────   │
-│                               │                                 │
-│                               ▼                                 │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │               meta_analyze.py                           │   │
-│   │                                                         │   │
-│   │   reads: results.tsv, git log, train.py                 │   │
-│   │   calls: OpenPlanter or Anthropic API                   │   │
-│   │   writes: next-hypotheses.md                            │   │
-│   └─────────────────────────────────────────────────────────┘   │
-│                               │                                 │
-│                               ▼                                 │
-│   Claude Code weights next-hypotheses.md 2x in next batch       │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+ ┌──────────────────────────────────────────────────────────┐
+ │                    Research Agent                         │
+ │                                                          │
+ │   reads: program.md (strategy), process_log.md (context) │
+ │   searches: web (verified, cited sources only)            │
+ │   writes: knowledge_index.tsv + report.md                 │
+ │                                                          │
+ │   Every 5 entries:                                        │
+ │   ─────────────────                                       │
+ │          │                                                │
+ │          ▼                                                │
+ │   ┌──────────────────────────────────────────────────┐    │
+ │   │              Meta-Analysis Agent                  │    │
+ │   │                                                   │    │
+ │   │  measures: cohort quality, confidence, efficiency │    │
+ │   │  compares: this cohort vs previous cohort         │    │
+ │   │  identifies: which question types work best       │    │
+ │   │  rewrites: program.md section 4 (strategy)        │    │
+ │   │  appends: process_log.md (reasoning)              │    │
+ │   │  commits: both files with meta: prefix            │    │
+ │   └──────────────────────────────────────────────────┘    │
+ │          │                                                │
+ │          ▼                                                │
+ │   Research agent reads new program.md → adapts            │
+ └──────────────────────────────────────────────────────────┘
 ```
+
+The research agent follows the strategy in `program.md`. Every 5 entries, `meta_analyze.py` fires: it measures cohort quality (citation density, confidence distribution, search efficiency), compares to the previous cohort, identifies which question types yielded the richest findings, rewrites the strategy section of `program.md`, logs its reasoning to `process_log.md`, and commits both.
+
+The research agent picks up the new strategy on its next iteration. The process evolves.
+
+## What Makes This Different
+
+Most AI research loops optimize the *output*. deep-loop optimizes the *process*.
+
+- **`program.md` is mutable.** The strategy section gets rewritten by meta-analysis after every cohort. Version-tracked. Each rewrite is a commit.
+- **`process_log.md` is the methodology memory.** Structured cohort comparisons with before/after metrics, explicit hypotheses, and testable predictions about what the next strategy change will produce.
+- **Question type classification.** `meta_analyze.py` categorizes questions (comparative, failure-mode, production-implementation, etc.) and measures which types yield HIGH-confidence, well-cited entries. Strategy rewrites promote what works and deprioritize what doesn't.
+- **The git log is the genealogy.** `git log program.md` shows how the research methodology evolved — which strategies were tried, which worked, and why they changed.
+
+## Example: What the System Learned
+
+Over 36 entries researching AI agent credential delegation:
+
+| Cohort | Strategy | Result |
+|--------|----------|--------|
+| v0 (Q1-Q26) | Static seed questions, no prioritization | 88% HIGH confidence, but diminishing returns on standards questions |
+| v1 (Q27-Q31) | Promoted comparative + failure-mode, killed market/survey | 100% HIGH confidence, comparative analysis consistently richest |
+| v2 (Q32-Q36) | Diversified entity sets, added efficiency tracking | Maintained 100% HIGH, discovered failure-mode questions reveal architectural truths |
+| v3 (Q37+) | Co-promoted failure-mode to #1, added developer-experience track | In progress |
+
+The system discovered on its own that "what breaks when X happens?" questions produce higher-quality findings than "how does X work?" questions — and rewrote its strategy accordingly.
 
 ## Quick Start
 
-### Local GPU (H100/A100)
-
 ```bash
-# Clone and setup
-git clone <repo> && cd deep-loop
-./setup.sh
+git clone https://github.com/kilroycreative/deep-loop.git
+cd deep-loop
 
-# Run in tmux (so it persists)
-tmux new-session -s deep-loop
-python orchestrate.py --tag mar7
-
-# Monitor from another terminal
-python orchestrate.py --status
-```
-
-### H100 Rental (Lambda, RunPod, etc.)
-
-```bash
-# SSH in and clone
-ssh user@gpu-server
-git clone <repo> && cd deep-loop
-
-# Run setup (installs uv, torch, downloads data)
-./setup.sh
+# Set up Python environment
+python -m venv .venv && source .venv/bin/activate
+pip install anthropic pytest
 
 # Export your API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # Launch in tmux
 tmux new-session -s deep-loop
-python orchestrate.py --tag exp1
+python orchestrate.py --tag my-research
 ```
+
+The agent runs in a Claude Code tmux session. It will:
+1. Read `CLAUDE.md` (research constitution — invariants, quality bar)
+2. Read `program.md` (current strategy) and `process_log.md` (methodology context)
+3. Pick a question based on strategy priorities
+4. Search the web, synthesize, cite, log to `knowledge_index.tsv` + `report.md`
+5. Every 5 entries: trigger meta-analysis → strategy rewrite → commit → adapt
 
 ## Files
 
-| File | Role | Modify? |
-|------|------|---------|
-| `prepare.py` | Data pipeline + eval (from autoresearch) | **NEVER** |
-| `train.py` | Model + training loop (agent modifies this) | Agent only |
-| `program.md` | Research direction + experiment protocol | Rarely |
-| `orchestrate.py` | Main entry point, launches agent | No |
-| `meta_analyze.py` | OpenPlanter integration for meta-analysis | No |
-| `notify.py` | Sends OpenClaw events on breakthroughs | No |
-| `results.tsv` | Experiment log (created at runtime) | Agent only |
-| `next-hypotheses.md` | Meta-analysis output (created at runtime) | Never |
-| `openplanter/` | OpenPlanter agent source | No |
-
-## Cost Estimate
-
-For an overnight run (~12 hours, ~100+ experiments):
-
-| Component | Cost |
-|-----------|------|
-| H100 compute (~12h @ $2/hr) | ~$24 |
-| Claude Opus agent (experiments) | ~$20 |
-| Claude Sonnet meta-analysis (~8 runs) | ~$0.50 |
-| **Total** | **~$45** |
-
-## The Research Direction
-
-The agent starts with these hypotheses (from `program.md`):
-
-1. **Window patterns**: Try "SSSSL", "SSL", "SLSL" instead of "SSSL"
-2. **Depth vs width**: 16L×640d, 8L×896d, 10L×832d
-3. **GQA ratio**: n_kv_head = 2, 3, or 4
-4. **Muon LR**: Try 0.02, 0.06, 0.08
-5. **Value Embedding frequency**: All layers, every 3rd, first/last only
-6. **Vocab size**: 16384 tokens (requires tokenizer retrain)
-7. **Sequence packing**: Different buffer sizes
-
-After 12 experiments, OpenPlanter analyzes results and proposes new hypotheses, which the agent weights 2x.
-
-## Notifications
-
-When val_bpb crosses thresholds, `notify.py` pings OpenClaw:
-
-- `val_bpb < 0.990`: "deep-loop: val_bpb=X.XXXXXX broke threshold 0.990"
-- `val_bpb < 0.985`: "deep-loop MAJOR: val_bpb=X.XXXXXX broke 0.985"
-
-## Baseline
-
-| Metric | Value |
-|--------|-------|
-| val_bpb | 0.997900 |
-| Parameters | ~50M |
-| Layers | 8 (configurable) |
-| Model dim | 512 (8 × 64 aspect ratio) |
-| Training time | 300 seconds |
-| Peak VRAM | ~45 GB |
-
-Goal: beat val_bpb < 0.990 within the 5-minute budget.
+| File | Who writes it | Role |
+|------|--------------|------|
+| `program.md` | Meta-agent | Research strategy (mutable). Versioned. Section 4 is the evolving surface. |
+| `process_log.md` | Meta-agent | Methodology memory. Cohort comparisons, strategy reasoning. |
+| `CLAUDE.md` | Human | Research constitution. Invariants, quality bar, [BLOCK] rules. |
+| `knowledge_index.tsv` | Research agent | Structured index of every question answered. Audit trail. |
+| `report.md` | Research agent | Growing research document. Cited, confidence-flagged. |
+| `meta_analyze.py` | Human | Cohort analysis, question classification, program.md rewriter. |
+| `orchestrate.py` | Human | Launches research agent in tmux, triggers meta-analysis. |
+| `notify.py` | System | Sends notifications on breakthroughs/completion. |
+| `results.tsv` | Research agent | Experiment log (ML mode). |
 
 ## Commands
 
 ```bash
-# Start experiment loop
+# Start research loop
 python orchestrate.py --tag <name>
 
-# Check progress
+# Check status
 python orchestrate.py --status
 
 # Run meta-analysis manually
-python orchestrate.py --meta-only
+python meta_analyze.py [--workspace .] [--cohort-size 5] [--dry-run]
 
-# Send test notification
-python notify.py --event breakthrough --val 0.9891
+# Dry run (see what meta-analysis would do without committing)
+python meta_analyze.py --dry-run
 ```
+
+## Adapting to Your Domain
+
+deep-loop is domain-agnostic. To research something else:
+
+1. Edit `program.md` — change the problem statement and seed question
+2. Edit `CLAUDE.md` — update the identity section to describe your domain
+3. Clear `knowledge_index.tsv` and `report.md`
+4. Run `python orchestrate.py --tag your-topic`
+
+The meta-analysis machinery works on any domain. It measures research quality and evolves the strategy regardless of what's being researched.
+
+## Architecture Decisions
+
+- **Claude Code as the research agent.** It has web search, file I/O, and git built in. No custom tooling needed for the inner loop.
+- **Separate meta-analysis process.** `meta_analyze.py` runs as a standalone script, not inside the research agent. This prevents the agent from gaming its own evaluation.
+- **TSV over database.** Flat files are diffable, greppable, and git-friendly. The research agent appends rows; meta-analysis reads them. No state synchronization needed.
+- **Fail-closed constitution.** `CLAUDE.md` uses `[BLOCK]` tags on invariants. Violations invalidate the entry. The research agent cannot modify its own constitution or the meta-analysis code.
+- **Surgical rewrites.** Meta-analysis only touches Section 4 of `program.md`. The problem statement, setup protocol, and research rules are stable. This keeps the versioning meaningful — each diff shows exactly what strategic choice changed.
+
+## Cost
+
+For an overnight research run (~50 entries):
+
+| Component | Estimate |
+|-----------|----------|
+| Claude Opus (research agent) | ~$15-25 |
+| Claude Sonnet (meta-analysis, ~10 runs) | ~$1 |
+| **Total** | **~$16-26** |
+
+No GPU required. This is pure research — web search, synthesis, and writing.
 
 ## License
 
