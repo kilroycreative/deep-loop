@@ -1,18 +1,20 @@
 # deep-loop
 
-**Autonomous ML research with a meta-analysis tier**
+**Two-tier autonomous research: experiments + meta-analysis**
 
-One-liner: autoresearch runs experiments. OpenPlanter steps back every hour to find what's working and generate smarter hypotheses. Two agents, one loop.
+Built on [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) and [ShinMegamiBoson's OpenPlanter](https://github.com/ShinMegamiBoson/OpenPlanter). deep-loop combines both into a single system where one agent runs experiments and another periodically steps back to find what's working and generate smarter hypotheses.
 
 ## What It Does
 
-deep-loop combines two autonomous systems:
+deep-loop has two modes:
 
-1. **autoresearch (inner loop)**: A Claude Code agent that modifies `train.py`, runs 5-minute training jobs on H100, logs results, and iterates. It never stops until you interrupt it.
+### Mode 1: ML Experiments (autoresearch + meta-analysis)
+A Claude Code agent modifies `train.py`, runs 5-minute training jobs on GPU, logs results, and iterates. Every 12 experiments (or after a significant improvement), OpenPlanter analyzes all results to identify patterns and propose smarter hypotheses.
 
-2. **OpenPlanter (meta-analysis)**: Every 12 experiments (or after a significant improvement), a second agent analyzes all results to identify patterns and propose smarter hypotheses.
+### Mode 2: Domain Research (web search + synthesis)
+A Claude Code agent picks questions from `program.md`, searches the web, synthesizes findings into `report.md`, and records entries in `knowledge_index.tsv`. Every 5 entries, the meta-analysis tier evaluates research quality and rewrites the strategy.
 
-The result: an experiment loop that gets smarter over time.
+Both modes share the same core loop: **experiment → record → meta-analyze → adapt → repeat.**
 
 ## Architecture
 
@@ -26,81 +28,73 @@ The result: an experiment loop that gets smarter over time.
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Claude Code Agent                           │
 │                                                                 │
-│   reads: program.md (research direction)                        │
-│   edits: train.py (model architecture, hyperparams)             │
-│   runs:  uv run train.py (5-min training on H100)               │
-│   logs:  results.tsv (experiment record)                        │
+│   reads: program.md (research direction / hypotheses)           │
+│   edits: train.py (ML mode) or report.md (research mode)       │
+│   runs:  uv run train.py (ML) or web search (research)         │
+│   logs:  results.tsv (ML) or knowledge_index.tsv (research)    │
 │                                                                 │
-│   Every 12 experiments OR after >0.003 val_bpb improvement:     │
+│   At regular intervals:                                         │
 │   ───────────────────────────────────────────────────────────   │
 │                               │                                 │
 │                               ▼                                 │
 │   ┌─────────────────────────────────────────────────────────┐   │
 │   │               meta_analyze.py                           │   │
 │   │                                                         │   │
-│   │   reads: results.tsv, git log, train.py                 │   │
+│   │   reads: results + git log + current state              │   │
 │   │   calls: OpenPlanter or Anthropic API                   │   │
-│   │   writes: next-hypotheses.md                            │   │
+│   │   writes: next-hypotheses.md / rewrites program.md      │   │
 │   └─────────────────────────────────────────────────────────┘   │
 │                               │                                 │
 │                               ▼                                 │
-│   Claude Code weights next-hypotheses.md 2x in next batch       │
+│   Agent adapts strategy based on meta-analysis output           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
 
-### Local GPU (H100/A100)
+### ML Mode (GPU required)
 
 ```bash
 # Clone and setup
-git clone <repo> && cd deep-loop
+git clone https://github.com/kilroycreative/deep-loop && cd deep-loop
 ./setup.sh
 
-# Run in tmux (so it persists)
+# Run in tmux
 tmux new-session -s deep-loop
-python orchestrate.py --tag mar7
+python orchestrate.py --tag exp1
 
 # Monitor from another terminal
 python orchestrate.py --status
 ```
 
-### H100 Rental (Lambda, RunPod, etc.)
+### Domain Research Mode
 
-```bash
-# SSH in and clone
-ssh user@gpu-server
-git clone <repo> && cd deep-loop
-
-# Run setup (installs uv, torch, downloads data)
-./setup.sh
-
-# Export your API key
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Launch in tmux
-tmux new-session -s deep-loop
-python orchestrate.py --tag exp1
-```
+1. Edit `program.md` — replace `YOUR_TOPIC_HERE` with your research topic
+2. Run `/loop` in Claude Code (reads `.claude/commands/loop.md`)
+3. The agent will search, synthesize, and build `report.md` autonomously
+4. Every 5 entries, meta-analysis evaluates and adapts the strategy
 
 ## Files
 
 | File | Role | Modify? |
 |------|------|---------|
+| `program.md` | Research direction + strategy (mutable by meta-agent) | Set topic, then let meta-agent evolve |
+| `CLAUDE.md` | Research constitution (invariants) | Rarely |
+| `train.py` | Model + training loop (ML mode) | Agent only |
 | `prepare.py` | Data pipeline + eval (from autoresearch) | **NEVER** |
-| `train.py` | Model + training loop (agent modifies this) | Agent only |
-| `program.md` | Research direction + experiment protocol | Rarely |
 | `orchestrate.py` | Main entry point, launches agent | No |
-| `meta_analyze.py` | OpenPlanter integration for meta-analysis | No |
-| `notify.py` | Sends OpenClaw events on breakthroughs | No |
-| `results.tsv` | Experiment log (created at runtime) | Agent only |
-| `next-hypotheses.md` | Meta-analysis output (created at runtime) | Never |
+| `meta_analyze.py` | Meta-analysis integration | No |
+| `notify.py` | Sends events on breakthroughs | No |
+| `report.md` | Research output (research mode) | Agent only |
+| `knowledge_index.tsv` | Research audit trail | Agent only |
+| `process_log.md` | Meta-analysis methodology log | meta_analyze.py only |
+| `results.tsv` | Experiment log (ML mode) | Agent only |
 | `openplanter/` | OpenPlanter agent source | No |
 
 ## Cost Estimate
 
-For an overnight run (~12 hours, ~100+ experiments):
+For an overnight ML run (~12 hours, ~100+ experiments):
 
 | Component | Cost |
 |-----------|------|
@@ -109,55 +103,40 @@ For an overnight run (~12 hours, ~100+ experiments):
 | Claude Sonnet meta-analysis (~8 runs) | ~$0.50 |
 | **Total** | **~$45** |
 
-## The Research Direction
-
-The agent starts with these hypotheses (from `program.md`):
-
-1. **Window patterns**: Try "SSSSL", "SSL", "SLSL" instead of "SSSL"
-2. **Depth vs width**: 16L×640d, 8L×896d, 10L×832d
-3. **GQA ratio**: n_kv_head = 2, 3, or 4
-4. **Muon LR**: Try 0.02, 0.06, 0.08
-5. **Value Embedding frequency**: All layers, every 3rd, first/last only
-6. **Vocab size**: 16384 tokens (requires tokenizer retrain)
-7. **Sequence packing**: Different buffer sizes
-
-After 12 experiments, OpenPlanter analyzes results and proposes new hypotheses, which the agent weights 2x.
+Domain research mode costs vary by topic breadth — roughly $5–15 of API usage per 20-entry research session.
 
 ## Notifications
 
-When val_bpb crosses thresholds, `notify.py` pings OpenClaw:
+When breakthroughs occur, `notify.py` pings OpenClaw:
 
-- `val_bpb < 0.990`: "deep-loop: val_bpb=X.XXXXXX broke threshold 0.990"
-- `val_bpb < 0.985`: "deep-loop MAJOR: val_bpb=X.XXXXXX broke 0.985"
+```bash
+# ML mode — val_bpb threshold crossed
+python notify.py --event breakthrough --val 0.9891
 
-## Baseline
-
-| Metric | Value |
-|--------|-------|
-| val_bpb | 0.997900 |
-| Parameters | ~50M |
-| Layers | 8 (configurable) |
-| Model dim | 512 (8 × 64 aspect ratio) |
-| Training time | 300 seconds |
-| Peak VRAM | ~45 GB |
-
-Goal: beat val_bpb < 0.990 within the 5-minute budget.
+# Research mode — significant insight
+python notify.py --event breakthrough --val "insight: discovered dominant standard"
+```
 
 ## Commands
 
 ```bash
-# Start experiment loop
+# ML: Start experiment loop
 python orchestrate.py --tag <name>
 
-# Check progress
+# ML: Check progress
 python orchestrate.py --status
 
-# Run meta-analysis manually
+# ML: Run meta-analysis manually
 python orchestrate.py --meta-only
 
-# Send test notification
-python notify.py --event breakthrough --val 0.9891
+# Research: Start autonomous research loop
+# (run /loop in Claude Code)
 ```
+
+## Attribution
+
+- **[autoresearch](https://github.com/karpathy/autoresearch)** by Andrej Karpathy — the autonomous ML experiment loop that deep-loop's inner tier is built on
+- **[OpenPlanter](https://github.com/ShinMegamiBoson/OpenPlanter)** by ShinMegamiBoson — the meta-analysis agent that powers deep-loop's outer tier
 
 ## License
 
