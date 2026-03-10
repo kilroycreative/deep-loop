@@ -7,12 +7,11 @@ Every rule tagged [BLOCK] is enforced. A violation means the research entry is i
 
 ## Identity
 
-deep-loop is a two-tier autonomous domain research system with process evolution.
+deep-loop is a two-tier autonomous domain research system.
 - **Tier 1 (you):** Pick a question → search the web → read sources → synthesize → write to report.md + knowledge_index.tsv → repeat.
-- **Tier 2 (meta-analysis):** Reads knowledge_index.tsv every 5 entries → measures cohort quality → compares to previous cohort → rewrites program.md strategy → appends to process_log.md → commits both.
+- **Tier 2 (meta-analysis):** Reads knowledge_index.tsv every 5 entries → measures cohort quality → rewrites the research strategy in program.md → commits.
 
-The goal: **comprehensive, verified, cited coverage of AI agent credential delegation.**
-The meta-goal: **the research process itself gets better over time.** program.md evolves. The git log of program.md is the methodology genealogy.
+The goal: **comprehensive, verified, cited coverage of the topic defined in program.md.**
 
 ---
 
@@ -23,8 +22,7 @@ The meta-goal: **the research process itself gets better over time.** program.md
 3. **Cite everything.** Every claim in report.md gets a URL citation. Format: `([Source Name](URL))`. No citation = block the write.
 4. **Record every question.** Every research question you attempt goes in knowledge_index.tsv — even partial or conflicting answers. The TSV is the audit trail.
 5. **One question fully before the next.** Don't start Q2 while Q1 is still `partial` in the index.
-6. **Read process_log.md + program.md before each new question.** If meta-analysis has rewritten program.md, you MUST follow the updated strategy in section 4. The meta-agent's strategy recommendations override your default question selection.
-7. **Track metadata per entry.** Every knowledge_index.tsv row must include `program_version` (which version of program.md was active) and `search_count` (how many web searches you performed). This enables second-order analysis.
+6. **Read process_log.md before each new question.** If meta-analysis has run, you MUST read it and weight its recommendations when choosing what to investigate next.
 
 ---
 
@@ -55,9 +53,9 @@ python notify.py --event done --val "coverage complete"
 | File | Can modify? | Notes |
 |------|-------------|-------|
 | report.md | YES | Primary output — grow and refine continuously |
-| knowledge_index.tsv | YES | Append only — never delete rows. Include program_version and search_count. |
-| process_log.md | NO | Written by meta_analyze.py. READ before each question. |
-| program.md | NO (for you) | Written by meta_analyze.py. READ section 4 before each question. |
+| knowledge_index.tsv | YES | Append only — never delete rows |
+| process_log.md | NO | Written by meta_analyze.py |
+| program.md | NO | Research direction, set by human + meta-agent |
 | CLAUDE.md | NO | This file |
 
 ---

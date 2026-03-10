@@ -4,23 +4,23 @@
 > Each version is committed with a `meta:` prefix. The git log of this file IS the
 > research methodology genealogy.
 
-**Version:** v3
-**Last rewritten by:** meta-agent (2026-03-09)
-**Cohort:** v3 (post-v2-cohort, 35 entries total — 25 v0 + 5 v1 + 5 v2)
+**Version:** v0
+**Last rewritten by:** human (initial)
 
 ---
 
 ## Problem Statement
 
-Build comprehensive, verified, cited coverage of **AI agent credential delegation** — how agents request, receive, use, and manage credentials on behalf of users.
+Build comprehensive, verified, cited coverage of **YOUR_TOPIC_HERE**.
 
+Replace this with a single sentence describing the domain you want to research.
 This is the only invariant. Everything below — the strategy, the question types, the priorities — is subject to revision by meta-analysis.
 
 ---
 
 ## 1. Setup Protocol
 
-1. **Agree on a tag** with the user (e.g., `mar7`, `cred-research`).
+1. **Agree on a tag** with the user (e.g., `mar7`, `quantum-computing`).
 2. **Create branch**: `git checkout -b research/<tag>`
 3. **Read the research constitution**: `cat CLAUDE.md`
 4. **Load existing state**:
@@ -61,7 +61,7 @@ question	answer_summary	sources	confidence	gaps_identified	status	program_versio
 Maintain and expand these sections as you learn:
 
 ```
-# AI Agent Credential Delegation — Research Report
+# [Your Topic] — Research Report
 
 ## Executive Summary
 ## The Problem Space
@@ -70,7 +70,7 @@ Maintain and expand these sections as you learn:
 ## Standards & Protocols
 ## Security Models & Attack Surfaces
 ## Open Problems & Gaps
-## Implications for Cred
+## Implications & Recommendations
 ## Sources
 ```
 
@@ -83,50 +83,25 @@ incorporate learned methodology preferences.
 
 ## 4. Current Research Strategy
 
-> Rewritten by meta-analysis on 2026-03-09 based on v2 cohort analysis (5 entries, Q32-Q36).
-> See process_log.md "v2 → v3 Analysis" for reasoning.
+> This section is rewritten by meta-analysis after every cohort (5 entries).
+> Before the first cohort, it contains the initial strategy.
 
-**Question generation approach:** Apply the connective-value test before every question: "Will answering this bridge 2+ existing topics in knowledge_index.tsv?" If it only extends a single thread, defer unless that thread has <3 entries.
+**Question generation approach:** Start with the seed question below. Each answer will surface gaps — follow those gaps. After the first meta-analysis run, this section will be rewritten with data-driven priorities.
 
-Maintain comparative framing and failure-mode framing as co-equal top priorities. **Diversify comparison targets** — do not re-compare entity sets already covered (Cedar/CA/FGA, AgentCore/XAA/Entra, cloud-provider IAM engines). **Prioritize newly emerging topics** — IETF WIMSE, graduated/continuous authorization, SPIFFE-MCP integration, lifecycle-aware credentials. These are more likely to yield novel findings than established topics.
-
-**Question type priorities:**
-1. **Comparative analysis** (co-#1) — 100% HIGH across all cohorts. Fresh entity sets only. v2 showed entity diversification maintains quality without repetition.
-2. **Failure-mode analysis** (co-#1, promoted from #3) — v2 demonstrated failure-mode questions produce the highest-impact findings. Q32 (IdP outage) revealed a critical spec gap; Q36 (stale permissions) unified 4 prior topics into a coherent failure analysis. Ask "what breaks when X happens?" — these reveal architectural truths that happy-path documentation obscures. Target ≥1 of 5 entries.
-3. **Production implementation** — v2 confirmed these anchor findings in reality. Target ≥1 of 5 entries. Frame comparatively when possible.
-4. **Developer experience** (NEW) — How do the new primitives (CIMD, SPIFFE, XAA, graduated authorization) change the developer journey from env vars to production auth? This thread has been neglected since v0. Target ≥1 of 5 entries.
-5. **Security and threat modeling** — Fold into failure-mode or comparative framing when possible. Do not pursue as standalone unless a production finding raises a specific threat question.
-6. **Standards and specification analysis** — Only pursue when a production or failure-mode finding raises a specific unanswered spec question. Prioritize WIMSE (newly active) over established specs.
-
-**Deprioritized:**
-- **Market-enterprise** — Eliminated since v1, no loss. Continue avoiding.
-- **Landscape-survey** — Domain is mapped. No more survey questions.
-- **Foundational-survey** — Bootstrap complete.
-- **Repeated comparisons** — If the same 2+ entities have already been compared, do not re-compare on a different dimension.
-- **Measurement-frontier gaps** — When a gap asks for "measured latency/performance of X" and 2+ entries have failed to find published data, mark it as "measurement-frontier" and deprioritize. The data may not exist publicly yet.
-
-**Stopping heuristic:** A topic is "covered" when report.md has a section with ≥3 independent sources, HIGH confidence, AND at least one comparative entry connecting it to another topic. Isolated coverage doesn't count.
-
-**Efficiency tracking:** Every entry MUST include search_count. v2 baseline: 5.0 searches per HIGH-confidence answer. Target ≤6.0 for v3 (relaxed from ≤5.0 — v2 data showed 5.0 was constraining). If a question requires >7 searches, it's too broad — split it.
-
-**Type classification rule:** Questions with 2+ named entities in comparative framing ("how does X compare to Y") are classified as comparative-analysis, regardless of domain topic.
-
-**Emerging topic priority list** (investigate these before revisiting established topics):
-- IETF WIMSE workload identity JWT specification
-- Graduated/continuous authorization (beyond binary grant/deny)
-- SPIFFE integration with MCP OAuth
-- Lifecycle-aware credential management patterns
-- Developer experience of CIMD/XAA onboarding
+**Question type priorities (initial — will be rewritten by meta-analysis):**
+1. **Foundational survey** — map the landscape. Who are the players? What exists?
+2. **Comparative analysis** — how do approaches differ? What tradeoffs do they make?
+3. **Production implementation** — what's actually deployed vs. theoretical?
+4. **Failure-mode analysis** — what breaks? Where are the gaps?
+5. **Standards and specification analysis** — what's codified? What's in draft?
 
 ---
 
 ## 5. Seed
 
-Start from the current state of knowledge_index.tsv. Pick the highest-priority gap from the most recent answered questions' `gaps_identified` column, or from process_log.md recommendations if available.
+Start with a single broad question to bootstrap the research:
 
-If knowledge_index.tsv is empty, start here:
-
-**Q1: What credential delegation patterns exist today for AI agents?**
+**Q1: What is the current state of [YOUR_TOPIC_HERE]?**
 
 That's it. Discover the rest.
 

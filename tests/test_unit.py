@@ -169,8 +169,7 @@ class TestMetaAnalyze:
         s.loader.exec_module(mod)
 
         task = mod.build_analysis_task(tmp_path)
-        assert "RFC 8693" in task or "OAuth" in task or "token exchange" in task
-        assert "knowledge" in task.lower() or "credential" in task.lower()
+        assert "knowledge" in task.lower() or "coverage" in task.lower()
         assert "Proposed" in task or "question" in task.lower()
 
     def test_runs_with_seeded_results(self, tmp_path):

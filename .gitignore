@@ -23,3 +23,4 @@ notify.log
 tests/__pycache__/
 .pytest_cache/
 .test-venv/
+.DS_Store
